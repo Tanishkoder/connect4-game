@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 - 3 Levels</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .level-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .level-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .level-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .level-btn.easy.active { background: #4caf50; }
+        .level-btn.medium.active { background: #ff9800; }
+        .level-btn.hard.active { background: #f44336; }
+        
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            min-height: 30px;
+        }
+        
+        .board {
+            background: #2196F3;
+            border-radius: 15px;
+            padding: 15px;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .column {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        
+        .column:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .cell.red {
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+            animation: drop 0.5s ease-out;
+        }
+        
+        .cell.yellow {
+            background: radial-gradient(circle at 30% 30%, #ffd93d, #f59f00);
+            animation: drop 0.5s ease-out;
+        }
+        
+        .cell.winning {
+            animation: pulse 0.6s ease-in-out infinite;
+        }
+        
+        @keyframes drop {
+            0% { transform: translateY(-400px); }
+            60% { transform: translateY(10px); }
+            80% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px 10px rgba(255,255,255,0); }
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .stats {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            .cell {
+                width: 45px;
+                height: 45px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Connect 4</h1>
+        
+        <div class="level-selector">
+            <button class="level-btn easy active" onclick="setLevel('easy')">Easy</button>
+            <button class="level-btn medium" onclick="setLevel('medium')">Medium</button>
+            <button class="level-btn hard" onclick="setLevel('hard')">Hard</button>
+        </div>
+        
+        <div class="game-info" id="gameInfo">Your turn (Red)</div>
+        
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="resetGame()">New Game</button>
+        </div>
+        
+        <div class="stats" id="stats">Wins: 0 | Losses: 0 | Draws: 0</div>
+    </div>
+
+    <script>
+        const ROWS = 6;
+        const COLS = 7;
+        const PLAYER = 'red';
+        const AI = 'yellow';
+        
+        let board = [];
+        let currentPlayer = PLAYER;
+        let gameOver = false;
+        let level = 'easy';
+        let stats = { wins: 0, losses: 0, draws: 0 };
+        
+        function initBoard() {
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            currentPlayer = PLAYER;
+            gameOver = false;
+            renderBoard();
+            updateInfo("Your turn (Red)");
+        }
+        
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            boardEl.style.display = 'grid';
+            boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+            boardEl.style.gap = '0';
+            
+            for (let col = 0; col < COLS; col++) {
+                const columnEl = document.createElement('div');
+                columnEl.className = 'column';
+                columnEl.onclick = () => dropPiece(col);
+                
+                for (let row = 0; row < ROWS; row++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (board[row][col]) {
+                        cell.classList.add(board[row][col]);
+                    }
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    columnEl.appendChild(cell);
+                }
+                
+                boardEl.appendChild(columnEl);
+            }
+        }
+        
+        function dropPiece(col) {
+            if (gameOver || currentPlayer !== PLAYER) return;
+            
+            const row = getLowestEmptyRow(col);
+            if (row === -1) return;
+            
+            board[row][col] = currentPlayer;
+            renderBoard();
+            
+            if (checkWin(row, col, currentPlayer)) {
+                endGame(`You win! 🎉`);
+                stats.wins++;
+                updateStats();
+                return;
+            }
+            
+            if (isBoardFull()) {
+                endGame("It's a draw!");
+                stats.draws++;
+                updateStats();
+                return;
+            }
+            
+            currentPlayer = AI;
+            updateInfo("AI thinking...");
+            setTimeout(aiMove, 500);
+        }
+        
+        function aiMove() {
+            let col;
+            
+            if (level === 'easy') {
+                col = easyAI();
+            } else if (level === 'medium') {
+                col = mediumAI();
+            } else {
+                col = hardAI();
+            }
+            
+            const row = getLowestEmptyRow(col);
+            board[row][col] = AI;
+            renderBoard();
+            
+            if (checkWin(row, col, AI)) {
+                endGame("AI wins! 😢");
+                stats.losses++;
+                updateStats();
+                return;
+            }
+            
+            if (isBoardFull()) {
+                endGame("It's a draw!");
+                stats.draws++;
+                updateStats();
+                return;
+            }
+            
+            currentPlayer = PLAYER;
+            updateInfo("Your turn (Red)");
+        }
+        
+        function easyAI() {
+            // Random valid move
+            const validCols = [];
+            for (let col = 0; col < COLS; col++) {
+                if (getLowestEmptyRow(col) !== -1) {
+                    validCols.push(col);
+                }
+            }
+            return validCols[Math.floor(Math.random() * validCols.length)];
+        }
+        
+        function mediumAI() {
+            // Try to win, block player, or random
+            for (let col = 0; col < COLS; col++) {
+                const row = getLowestEmptyRow(col);
+                if (row !== -1) {
+                    board[row][col] = AI;
+                    if (checkWin(row, col, AI)) {
+                        board[row][col] = null;
+                        return col;
+                    }
+                    board[row][col] = null;
+                }
+            }
+            
+            for (let col = 0; col < COLS; col++) {
+                const row = getLowestEmptyRow(col);
+                if (row !== -1) {
+                    board[row][col] = PLAYER;
+                    if (checkWin(row, col, PLAYER)) {
+                        board[row][col] = null;
+                        return col;
+                    }
+                    board[row][col] = null;
+                }
+            }
+            
+            return easyAI();
+        }
+        
+        function hardAI() {
+            // Minimax with depth 4
+            let bestScore = -Infinity;
+            let bestCol = 3;
+            
+            for (let col = 0; col < COLS; col++) {
+                const row = getLowestEmptyRow(col);
+                if (row !== -1) {
+                    board[row][col] = AI;
+                    const score = minimax(3, false, -Infinity, Infinity);
+                    board[row][col] = null;
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestCol = col;
+                    }
+                }
+            }
+            
+            return bestCol;
+        }
+        
+        function minimax(depth, isMaximizing, alpha, beta) {
+            // Check terminal states
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    if (board[row][col]) {
+                        if (checkWin(row, col, AI)) return 1000;
+                        if (checkWin(row, col, PLAYER)) return -1000;
+                    }
+                }
+            }
+            
+            if (depth === 0 || isBoardFull()) return 0;
+            
+            if (isMaximizing) {
+                let maxScore = -Infinity;
+                for (let col = 0; col < COLS; col++) {
+                    const row = getLowestEmptyRow(col);
+                    if (row !== -1) {
+                        board[row][col] = AI;
+                        const score = minimax(depth - 1, false, alpha, beta);
+                        board[row][col] = null;
+                        maxScore = Math.max(maxScore, score);
+                        alpha = Math.max(alpha, score);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return maxScore;
+            } else {
+                let minScore = Infinity;
+                for (let col = 0; col < COLS; col++) {
+                    const row = getLowestEmptyRow(col);
+                    if (row !== -1) {
+                        board[row][col] = PLAYER;
+                        const score = minimax(depth - 1, true, alpha, beta);
+                        board[row][col] = null;
+                        minScore = Math.min(minScore, score);
+                        beta = Math.min(beta, score);
+                        if (beta <= alpha) break;
+                    }
+                }
+                return minScore;
+            }
+        }
+        
+        function getLowestEmptyRow(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (!board[row][col]) return row;
+            }
+            return -1;
+        }
+        
+        function checkWin(row, col, player) {
+            const directions = [
+                [[0, 1], [0, -1]],   // Horizontal
+                [[1, 0], [-1, 0]],   // Vertical
+                [[1, 1], [-1, -1]],  // Diagonal /
+                [[1, -1], [-1, 1]]   // Diagonal \
+            ];
+            
+            for (const [dir1, dir2] of directions) {
+                let count = 1;
+                count += countDirection(row, col, dir1[0], dir1[1], player);
+                count += countDirection(row, col, dir2[0], dir2[1], player);
+                
+                if (count >= 4) {
+                    highlightWinningCells(row, col, dir1, dir2, player);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        function countDirection(row, col, dRow, dCol, player) {
+            let count = 0;
+            let r = row + dRow;
+            let c = col + dCol;
+            
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+                count++;
+                r += dRow;
+                c += dCol;
+            }
+            return count;
+        }
+        
+        function highlightWinningCells(row, col, dir1, dir2, player) {
+            const cells = [[row, col]];
+            
+            let r = row + dir1[0];
+            let c = col + dir1[1];
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+                cells.push([r, c]);
+                r += dir1[0];
+                c += dir1[1];
+            }
+            
+            r = row + dir2[0];
+            c = col + dir2[1];
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+                cells.push([r, c]);
+                r += dir2[0];
+                c += dir2[1];
+            }
+            
+            cells.forEach(([r, c]) => {
+                const cell = document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                if (cell) cell.classList.add('winning');
+            });
+        }
+        
+        function isBoardFull() {
+            return board[0].every(cell => cell !== null);
+        }
+        
+        function endGame(message) {
+            gameOver = true;
+            updateInfo(message);
+        }
+        
+        function updateInfo(message) {
+            document.getElementById('gameInfo').textContent = message;
+        }
+        
+        function updateStats() {
+            document.getElementById('stats').textContent = 
+                `Wins: ${stats.wins} | Losses: ${stats.losses} | Draws: ${stats.draws}`;
+        }
+        
+        function setLevel(newLevel) {
+            level = newLevel;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            resetGame();
+        }
+        
+        function resetGame() {
+            initBoard();
+        }
+        
+        // Initialize game
+        initBoard();
+    </script>
+</body>
+</html>
